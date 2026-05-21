@@ -1,0 +1,29 @@
+services:
+  mongo-book:
+    image: mongo:7
+    container_name: mongo-book
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-book-data:/data/db
+    networks:
+      - microservice-network
+
+  book-service:
+    build: ./book-service
+    container_name: book-service
+    ports:
+      - "3001:3001"
+    environment:
+      - MONGO_URL=mongodb://mongo-book:27017/bookdb
+    depends_on:
+      - mongo-book
+    networks:
+      - microservice-network
+
+volumes:
+  mongo-book-data:
+
+networks:
+  microservice-network:
+    driver: bridge
