@@ -39,7 +39,7 @@ services:
   member-service:
     build:
       context: ./member-service
-      dockerfile: DockerFile
+      dockerfile: Dockerfile
     container_name: member-service
     ports:
       - "8081:8081"
