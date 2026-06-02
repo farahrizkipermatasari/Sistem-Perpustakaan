@@ -157,3 +157,8 @@ app.use((req, res) => {
         message: "Endpoint tidak ditemukan",
     });
 });
+
+app.listen(PORT, "0.0.0.0", () => {
+    console.log("API Gateway berjalan pada port ${PORT}");
+});
+

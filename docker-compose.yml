@@ -71,7 +71,7 @@ services:
     build: "./Loan -service"
     container_name: loan-service
     ports:
-      - "5001:5000"
+      - "5001:5001"
     environment:
       DB_HOST: loan-db
       DB_NAME: loan_db
@@ -101,7 +101,7 @@ services:
     build: ./Fine-sevice
     container_name: fine-service
     ports:
-      - "5002:5000"
+      - "5002:5002"
     environment:
       DB_HOST: fine-db
       DB_NAME: fine_db
@@ -122,8 +122,8 @@ services:
       PORT: 3000
       BOOK_SERVICE_URL: http://book-service:3001
       MEMBER_SERVICE_URL: http://member-service:8081
-      LOAN_SERVICE_URL: http://loan-service:5000
-      FINE_SERVICE_URL: http://fine-service:5000
+      LOAN_SERVICE_URL: http://loan-service:5001
+      FINE_SERVICE_URL: http://fine-service:5002
     depends_on:
       - book-service
       - member-service
