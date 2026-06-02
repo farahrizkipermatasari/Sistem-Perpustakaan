@@ -10,19 +10,133 @@ services:
       - microservice-network
 
   book-service:
-    build: ./book-service
+    build: ./Book-service
     container_name: book-service
     ports:
       - "3001:3001"
     environment:
-      - MONGO_URL=mongodb://mongo-book:27017/bookdb
+      MONGO_URL: mongodb://mongo-book:27017/bookdb
     depends_on:
       - mongo-book
     networks:
       - microservice-network
 
+  member-db:
+    image: mysql:8.4
+    container_name: member-db
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: member_db
+      MYSQL_USER: member_user
+      MYSQL_PASSWORD: member_password
+      MYSQL_ROOT_PASSWORD: root_password
+    volumes:
+      - member-db-data:/var/lib/mysql
+    networks:
+      - microservice-network
+
+  member-service:
+    build:
+      context: ./member-service
+      dockerfile: DockerFile
+    container_name: member-service
+    ports:
+      - "8081:8081"
+    environment:
+      DB_HOST: member-db
+      DB_NAME: member_db
+      DB_USER: member_user
+      DB_PASSWORD: member_password
+    depends_on:
+      - member-db
+    networks:
+      - microservice-network
+
+  loan-db:
+    image: postgres:17-alpine
+    container_name: loan-db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: loan_db
+      POSTGRES_USER: loan_user
+      POSTGRES_PASSWORD: loan_password
+    volumes:
+      - loan-db-data:/var/lib/postgresql/data
+    networks:
+      - microservice-network
+
+  loan-service:
+    build: "./Loan -service"
+    container_name: loan-service
+    ports:
+      - "5001:5000"
+    environment:
+      DB_HOST: loan-db
+      DB_NAME: loan_db
+      DB_USER: loan_user
+      DB_PASSWORD: loan_password
+      DB_PORT: 5432
+    depends_on:
+      - loan-db
+    networks:
+      - microservice-network
+
+  fine-db:
+    image: postgres:17-alpine
+    container_name: fine-db
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: fine_db
+      POSTGRES_USER: fine_user
+      POSTGRES_PASSWORD: fine_password
+    volumes:
+      - fine-db-data:/var/lib/postgresql/data
+    networks:
+      - microservice-network
+
+  fine-service:
+    build: ./Fine-sevice
+    container_name: fine-service
+    ports:
+      - "5002:5000"
+    environment:
+      DB_HOST: fine-db
+      DB_NAME: fine_db
+      DB_USER: fine_user
+      DB_PASSWORD: fine_password
+      DB_PORT: 5432
+    depends_on:
+      - fine-db
+    networks:
+      - microservice-network
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      BOOK_SERVICE_URL: http://book-service:3001
+      MEMBER_SERVICE_URL: http://member-service:8081
+      LOAN_SERVICE_URL: http://loan-service:5000
+      FINE_SERVICE_URL: http://fine-service:5000
+    depends_on:
+      - book-service
+      - member-service
+      - loan-service
+      - fine-service
+    networks:
+      - microservice-network
+
 volumes:
   mongo-book-data:
+  member-db-data:
+  loan-db-data:
+  fine-db-data:
 
 networks:
   microservice-network:
