@@ -4,97 +4,245 @@ const mongoose = require("mongoose");
 const app = express();
 const PORT = 3001;
 
-// Middleware untuk membaca JSON dari request body
 app.use(express.json());
 
-// ── Koneksi ke MongoDB ──────────────────────────────────────────
-// MongoDB berjalan di container bernama "mongo-book" (dari docker-compose)
-const MONGO_URL = process.env.MONGO_URL || "mongodb://mongo-book:27017/bookdb";
+const MONGO_URL =
+  process.env.MONGO_URL ||
+  "mongodb://book_user:book_password@book-db:27017/book_db?authSource=admin";
 
-mongoose
-  .connect(MONGO_URL)
-  .then(() => console.log("Terhubung ke MongoDB"))
-  .catch((err) => console.error("Gagal konek MongoDB:", err));
-
-// ── Schema & Model ──────────────────────────────────────────────
-// Mendefinisikan struktur data buku di MongoDB
-const bookSchema = new mongoose.Schema({
-  title:    { type: String, required: true },
-  author:   { type: String, required: true },
-  isbn:     { type: String, required: true, unique: true },
-  stock:    { type: Number, default: 1 },
-  category: { type: String, default: "Umum" },
-});
+// =========================
+// Schema Book
+// =========================
+const bookSchema = new mongoose.Schema(
+  {
+    title: {
+      type: String,
+      required: true
+    },
+    author: {
+      type: String,
+      required: true
+    },
+    isbn: {
+      type: String,
+      required: true,
+      unique: true
+    },
+    stock: {
+      type: Number,
+      default: 1
+    },
+    category: {
+      type: String,
+      default: "Umum"
+    }
+  },
+  {
+    timestamps: true
+  }
+);
 
 const Book = mongoose.model("Book", bookSchema);
 
-// ── Endpoint ────────────────────────────────────────────────────
+// =========================
+// MongoDB Connection
+// =========================
+async function connectWithRetry(retries = 20, delay = 3000) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      await mongoose.connect(MONGO_URL);
+      console.log("Book Service berhasil terhubung ke MongoDB");
+      return;
+    } catch (error) {
+      console.log(`Menunggu MongoDB siap... percobaan ${attempt}`);
+      console.log(error.message);
 
-// Health check — untuk memastikan service berjalan
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+
+  throw new Error("Book Service gagal terhubung ke MongoDB");
+}
+
+// =========================
+// Seed Data Awal
+// =========================
+async function seedBooks() {
+  const total = await Book.countDocuments();
+
+  if (total === 0) {
+    await Book.create([
+      {
+        title: "Node.js Dasar",
+        author: "Andi",
+        isbn: "978001",
+        stock: 10,
+        category: "Programming"
+      },
+      {
+        title: "MongoDB Praktis",
+        author: "Budi",
+        isbn: "978002",
+        stock: 5,
+        category: "Database"
+      }
+    ]);
+
+    console.log("Data awal buku berhasil dibuat");
+  }
+}
+
+// =========================
+// Health Check
+// =========================
 app.get("/health", (req, res) => {
   res.json({
     service: "book-service",
-    status: "running",
-    database: "MongoDB",
+    database: "mongodb",
     language: "Node.js",
+    status: "running"
   });
 });
 
-// GET semua buku
+// =========================
+// GET All Books
+// =========================
 app.get("/books", async (req, res) => {
   try {
     const books = await Book.find();
-    res.json({ service: "book-service", data: books });
+
+    res.json({
+      service: "book-service",
+      database: "mongodb",
+      data: books
+    });
   } catch (error) {
-    res.status(500).json({ message: "Gagal mengambil data buku", error: error.message });
+    res.status(500).json({
+      message: "Gagal mengambil data buku",
+      error: error.message
+    });
   }
 });
 
-// GET buku berdasarkan ID
+// =========================
+// GET Book By ID
+// =========================
 app.get("/books/:id", async (req, res) => {
   try {
     const book = await Book.findById(req.params.id);
-    if (!book) return res.status(404).json({ message: "Buku tidak ditemukan" });
-    res.json({ service: "book-service", data: book });
+
+    if (!book) {
+      return res.status(404).json({
+        message: "Buku tidak ditemukan"
+      });
+    }
+
+    res.json({
+      service: "book-service",
+      database: "mongodb",
+      data: book
+    });
   } catch (error) {
-    res.status(500).json({ message: "Gagal mengambil buku", error: error.message });
+    res.status(500).json({
+      message: "Gagal mengambil detail buku",
+      error: error.message
+    });
   }
 });
 
-// POST tambah buku baru
+// =========================
+// CREATE Book
+// =========================
 app.post("/books", async (req, res) => {
   try {
-    const book = new Book(req.body);
-    await book.save();
-    res.status(201).json({ service: "book-service", message: "Buku berhasil ditambahkan", data: book });
+    const { title, author, isbn, stock, category } = req.body;
+
+    const book = await Book.create({
+      title,
+      author,
+      isbn,
+      stock,
+      category
+    });
+
+    res.status(201).json({
+      service: "book-service",
+      message: "Buku berhasil ditambahkan",
+      data: book
+    });
   } catch (error) {
-    res.status(500).json({ message: "Gagal menambah buku", error: error.message });
+    res.status(500).json({
+      message: "Gagal menambahkan buku",
+      error: error.message
+    });
   }
 });
 
-// PUT update buku
+// =========================
+// UPDATE Book
+// =========================
 app.put("/books/:id", async (req, res) => {
   try {
-    const book = await Book.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!book) return res.status(404).json({ message: "Buku tidak ditemukan" });
-    res.json({ service: "book-service", message: "Buku berhasil diupdate", data: book });
+    const book = await Book.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+
+    if (!book) {
+      return res.status(404).json({
+        message: "Buku tidak ditemukan"
+      });
+    }
+
+    res.json({
+      service: "book-service",
+      message: "Buku berhasil diperbarui",
+      data: book
+    });
   } catch (error) {
-    res.status(500).json({ message: "Gagal update buku", error: error.message });
+    res.status(500).json({
+      message: "Gagal memperbarui buku",
+      error: error.message
+    });
   }
 });
 
-// DELETE hapus buku
+// =========================
+// DELETE Book
+// =========================
 app.delete("/books/:id", async (req, res) => {
   try {
     const book = await Book.findByIdAndDelete(req.params.id);
-    if (!book) return res.status(404).json({ message: "Buku tidak ditemukan" });
-    res.json({ service: "book-service", message: "Buku berhasil dihapus" });
+
+    if (!book) {
+      return res.status(404).json({
+        message: "Buku tidak ditemukan"
+      });
+    }
+
+    res.json({
+      service: "book-service",
+      message: "Buku berhasil dihapus"
+    });
   } catch (error) {
-    res.status(500).json({ message: "Gagal hapus buku", error: error.message });
+    res.status(500).json({
+      message: "Gagal menghapus buku",
+      error: error.message
+    });
   }
 });
 
-// ── Jalankan Server ─────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`Book Service berjalan pada port ${PORT}`);
-});
+// =========================
+// Start Server
+// =========================
+async function startServer() {
+  await connectWithRetry();
+  await seedBooks();
+
+  app.listen(PORT, () => {
+    console.log(`Book Service berjalan pada port ${PORT}`);
+  });
+}
+
+startServer();
