@@ -147,4 +147,4 @@ if __name__ == "__main__":
     connect_with_retry()
     init_database()
 
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=5002)

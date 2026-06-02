@@ -8,8 +8,8 @@ app.use(express.json());
 const services = {
     books: process.env.BOOKS_SERVICE_URL || 'http://localhost:3001',
     members: process.env.MEMBERS_SERVICE_URL || 'http://localhost:8081',
-    loans: process.env.LOANS_SERVICE_URL || 'http://localhost:5000',
-    fines: process.env.FINES_SERVICE_URL || 'http://localhost:5000',
+    loans: process.env.LOANS_SERVICE_URL || 'http://localhost:5001',
+    fines: process.env.FINES_SERVICE_URL || 'http://localhost:5002',
 };
 
 function buildRequestOptions(req){
