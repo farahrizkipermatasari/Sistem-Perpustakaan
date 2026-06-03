@@ -10,7 +10,7 @@ services:
       - microservice-network
 
   book-service:
-    build: ./Book-service
+    build: ./book-service
     container_name: book-service
     ports:
       - "3001:3001"
@@ -68,7 +68,7 @@ services:
       - microservice-network
 
   loan-service:
-    build: "./Loan -service"
+    build: "./loan-service"
     container_name: loan-service
     ports:
       - "5001:5001"
@@ -78,8 +78,12 @@ services:
       DB_USER: loan_user
       DB_PASSWORD: loan_password
       DB_PORT: 5432
+      MEMBER_SERVICE_URL: http://member-service:8081
+      BOOK_SERVICE_URL: http://book-service:3001
     depends_on:
       - loan-db
+      - member-service
+      - book-service
     networks:
       - microservice-network
 
@@ -98,7 +102,7 @@ services:
       - microservice-network
 
   fine-service:
-    build: ./Fine-sevice
+    build: ./fine-sevice
     container_name: fine-service
     ports:
       - "5002:5002"
@@ -120,6 +124,24 @@ services:
       - "3000:3000"
     environment:
       PORT: 3000
+      BOOK_SERVICE_URL: http://book-service:3001
+      MEMBER_SERVICE_URL: http://member-service:8081
+      LOAN_SERVICE_URL: http://loan-service:5001
+      FINE_SERVICE_URL: http://fine-service:5002
+    depends_on:
+      - book-service
+      - member-service
+      - loan-service
+      - fine-service
+    networks:
+      - microservice-network
+  graphql-gateway:
+    build: ./graphql-gateway
+    container_name: graphql-gateway
+    ports:
+      - "4000:4000"
+    entrypoint: 
+      PORT: 4000
       BOOK_SERVICE_URL: http://book-service:3001
       MEMBER_SERVICE_URL: http://member-service:8081
       LOAN_SERVICE_URL: http://loan-service:5001

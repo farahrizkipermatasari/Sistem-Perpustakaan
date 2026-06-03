@@ -142,6 +142,119 @@ def create_fine():
         }
     }), 201
 
+@app.route("/fines/<int:fine_id>", methods=["GET"])
+def get_fine_by_id(fine_id):
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT id, customer_name, amount, reason
+        FROM fines
+        WHERE id = %s
+    """, (fine_id,))
+
+    row = cursor.fetchone()
+    cursor.close()
+
+    if row is None:
+        return jsonify({
+            "message": "Data denda tidak ditemukan"
+        }), 404
+
+    return jsonify({
+        "id": row[0],
+        "customer_name": row[1],
+        "amount": row[2],
+        "reason": row[3]
+    }), 200
+
+@app.route("/fines/<int:fine_id>", methods=["PUT"])
+def update_fine(fine_id):
+
+    body = request.get_json(silent=True)
+
+    if not body:
+        return jsonify({
+            "message": "Body request harus berupa JSON"
+        }), 400
+
+    customer_name = body.get("customer_name")
+    amount = body.get("amount")
+    reason = body.get("reason")
+
+    if not customer_name or amount is None:
+        return jsonify({
+            "message": "customer_name dan amount wajib diisi"
+        }), 400
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE fines
+        SET customer_name = %s,
+            amount = %s,
+            reason = %s
+        WHERE id = %s
+        RETURNING id
+    """, (
+        customer_name,
+        amount,
+        reason,
+        fine_id
+    ))
+
+    row = cursor.fetchone()
+
+    if row is None:
+        conn.rollback()
+        cursor.close()
+
+        return jsonify({
+            "message": "Data denda tidak ditemukan"
+        }), 404
+
+    conn.commit()
+    cursor.close()
+
+    return jsonify({
+        "message": "Data denda berhasil diperbarui",
+        "data": {
+            "id": fine_id,
+            "customer_name": customer_name,
+            "amount": amount,
+            "reason": reason
+        }
+    }), 200
+
+@app.route("/fines/<int:fine_id>", methods=["DELETE"])
+def delete_fine(fine_id):
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        DELETE FROM fines
+        WHERE id = %s
+        RETURNING id
+    """, (fine_id,))
+
+    row = cursor.fetchone()
+
+    if row is None:
+        conn.rollback()
+        cursor.close()
+
+        return jsonify({
+            "message": "Data denda tidak ditemukan"
+        }), 404
+
+    conn.commit()
+    cursor.close()
+
+    return jsonify({
+        "message": "Data denda berhasil dihapus",
+        "id": row[0]
+    }), 200
+
 
 if __name__ == "__main__":
     connect_with_retry()

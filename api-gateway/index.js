@@ -6,10 +6,10 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 
 const services = {
-    books: process.env.BOOKS_SERVICE_URL || 'http://localhost:3001',
-    members: process.env.MEMBERS_SERVICE_URL || 'http://localhost:8081',
-    loans: process.env.LOANS_SERVICE_URL || 'http://localhost:5001',
-    fines: process.env.FINES_SERVICE_URL || 'http://localhost:5002',
+    books: process.env.BOOK_SERVICE_URL || 'http://book-service:3001',
+    members: process.env.MEMBER_SERVICE_URL || 'http://member-service:8081',
+    loans: process.env.LOAN_SERVICE_URL || 'http://loan-service:5001',
+    fines: process.env.FINE_SERVICE_URL || 'http://fine-service:5002',
 };
 
 function buildRequestOptions(req){
@@ -87,8 +87,8 @@ app.get("/", (req, res) => {
             members: "/api/members",
             loans: "/api/loans",
             fines: "/api/fines",
-            health: "/api/health",
-            system_status: "/api/system-status"
+            health: "/health",
+            system_status: "/system-status"
         }
     });
 });
@@ -159,6 +159,6 @@ app.use((req, res) => {
 });
 
 app.listen(PORT, "0.0.0.0", () => {
-    console.log("API Gateway berjalan pada port ${PORT}");
+    console.log(`API Gateway berjalan pada port ${PORT}`);
 });
 

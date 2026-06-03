@@ -209,6 +209,50 @@ app.put("/books/:id", async (req, res) => {
 });
 
 // =========================
+// UPDATE Stock Book
+// =========================
+
+app.patch("/books/:id/stock", async (req, res) => {
+  try {
+    const {delta} = req.body;
+
+    if (delta !== 1 && delta !== -1) {
+      return res.status(400).json({
+        message: "Delta harus bernilai 1 atau -1"
+      });
+    }
+    const book = await Book.findById(req.params.id);
+
+    if (!book) {
+      return res.status(404).json({
+        message: "Buku tidak ditemukan"
+      });
+    }
+
+    if (delta === -1 && book.stock <= 0) {
+      return res.status(400).json({
+        message: "Stok buku tidak cukup untuk dipinjam"
+      });
+    }
+
+    book.stock += delta;
+    
+    await book.save();
+
+    return res.json({
+      service: "book-service",
+      message: "Stok buku berhasil diperbarui",
+      data: book
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Gagal memperbarui stok buku",
+      error: error.message
+    });
+  }
+});
+
+// =========================
 // DELETE Book
 // =========================
 app.delete("/books/:id", async (req, res) => {
