@@ -47,7 +47,7 @@ public class Main {
     }
 
     private static void waitForDatabase() throws InterruptedException {
-        int retries = 20;
+        int retries = 60;
 
         for (int i = 1; i <= retries; i++){
             try (Connection connection = getConnection()) {

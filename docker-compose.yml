@@ -140,7 +140,7 @@ services:
     container_name: graphql-gateway
     ports:
       - "4000:4000"
-    entrypoint: 
+    environment: 
       PORT: 4000
       BOOK_SERVICE_URL: http://book-service:3001
       MEMBER_SERVICE_URL: http://member-service:8081

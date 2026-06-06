@@ -100,6 +100,7 @@ app.get("/health", (req, res) => {
     service: "book-service",
     database: "mongodb",
     language: "Node.js",
+    framework: "Express",
     status: "running"
   });
 });

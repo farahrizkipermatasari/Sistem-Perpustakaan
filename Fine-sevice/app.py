@@ -39,29 +39,56 @@ def connect_with_retry(retries=20, delay=3):
 def init_database():
     cursor = conn.cursor()
 
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS fines (
-            id SERIAL PRIMARY KEY,
-            customer_name VARCHAR(100) NOT NULL,
-            amount INTEGER NOT NULL,
-            reason TEXT
-        )
-    """)
-
-    cursor.execute("SELECT COUNT(*) FROM fines")
-    total = cursor.fetchone()[0]
-
-    if total == 0:
+    try:
         cursor.execute("""
-            INSERT INTO fines (customer_name, amount, reason)
-            VALUES
-            ('Andi', 50000, 'Keterlambatan pembayaran'),
-            ('Budi', 100000, 'Pelanggaran kontrak')
+            CREATE TABLE IF NOT EXISTS fines (
+                id SERIAL PRIMARY KEY,
+                customer_name VARCHAR(100) NOT NULL,
+                amount INTEGER NOT NULL,
+                reason TEXT
+            )
         """)
+
+        cursor.execute("SELECT COUNT(*) FROM fines")
+        total = cursor.fetchone()[0]
+
+        if total == 0:
+            cursor.execute("""
+                INSERT INTO fines (
+                    customer_name,
+                    amount,
+                    reason
+                )
+                VALUES
+                    (
+                        'Andi',
+                        50000,
+                        'Keterlambatan pembayaran'
+                    ),
+                    (
+                        'Budi',
+                        100000,
+                        'Pelanggaran kontrak'
+                    )
+            """)
+
+        cursor.execute("""
+            SELECT setval(
+                pg_get_serial_sequence('fines', 'id'),
+                COALESCE((SELECT MAX(id) FROM fines), 1),
+                true
+            )
+        """)
+
         conn.commit()
+        print("Tabel fine siap dipakai")
 
-    cursor.close()
+    except Exception:
+        conn.rollback()
+        raise
 
+    finally:
+        cursor.close()
 
 @app.route("/health", methods=["GET"])
 def health():

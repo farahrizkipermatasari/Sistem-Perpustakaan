@@ -8,7 +8,7 @@ const MEMBER_SERVICE_URL = process.env.MEMBER_SERVICE_URL || "http://member-serv
 const LOAN_SERVICE_URL = process.env.LOAN_SERVICE_URL || "http://loan-service:5001";
 const FINE_SERVICE_URL = process.env.FINE_SERVICE_URL || "http://fine-service:5002";
 
-async function fetchJson(url, option = {}){
+async function fetchJson(url, options = {}){
     const response = await fetch( url, {
         headers: {
             "Content-Type": "application/json",
@@ -45,7 +45,7 @@ function normalizeBook(book) {
         stock: book.stock,
         category: book.category,
         createdAt: book.createdAt,
-        updateAt: book.updateAt
+        updatedAt: book.updatedAt
     }
 }
 
@@ -101,8 +101,8 @@ const typeDefs = `#graphql
 
     type ServiceHealth {
         service: String
-        languange: String
-        framwork: String
+        language: String
+        framework: String
         database: String
         status: String
     }
@@ -161,6 +161,15 @@ const typeDefs = `#graphql
             category: String
         ): Book
 
+        updateMember(
+            id: ID!
+            name: String
+            email: String
+            phone: String
+            address: String
+            status: String
+        ): Member
+
         updateLoanStatus(
             id: ID!
             status: String!
@@ -195,7 +204,7 @@ const resolvers = {
             return result.data.map(normalizeBook);
         },
 
-        books: async (_, { id }) => {
+        book: async (_, { id }) => {
             const result = await fetchJson(
                 `${BOOK_SERVICE_URL}/books/${id}`
             );
@@ -346,7 +355,7 @@ const resolvers = {
             const result = await fetchJson(
                 `${BOOK_SERVICE_URL}/books/${id}`,
                 {
-                    mehtod: "PUT",
+                    method: "PUT",
                     body: JSON.stringify(payload)
                 }
             );
@@ -358,7 +367,7 @@ const resolvers = {
             await fetchJson(
                 `${BOOK_SERVICE_URL}/books/${id}`,
                 {
-                    mehtod: "DELETE"
+                    method: "DELETE"
                 }
             );
 
@@ -378,7 +387,7 @@ const resolvers = {
             const result = await fetchJson(
                 `${MEMBER_SERVICE_URL}/members`,
                 {
-                    mehtod: "POST",
+                    method: "POST",
                     body: JSON.stringify({
                         name,
                         email,
@@ -386,6 +395,35 @@ const resolvers = {
                         address,
                         status
                     })
+                }
+            );
+            return result.data;
+        },
+
+        updateMember: async (
+            _, 
+            { 
+                id, 
+                name, 
+                email, 
+                phone, 
+                address, 
+                status 
+            }
+        ) => {
+            const payload = {};
+
+            if (name !== undefined) payload.name = name;
+            if (email !== undefined) payload.email = email;
+            if (phone !== undefined) payload.phone = phone;
+            if (address !== undefined) payload.address = address;
+            if (status !== undefined) payload.status = status;
+
+            const result = await fetchJson(
+                `${MEMBER_SERVICE_URL}/members/${id}`,
+                {
+                method: "PUT",
+                body: JSON.stringify(payload)
                 }
             );
             return result.data;
@@ -509,4 +547,4 @@ const {url} = await startStandaloneServer(server, {
     }
 });
 
-consol.log(`GraphQl Gateway berjalan pada ${url}`);
+console.log(`GraphQl Gateway berjalan pada ${url}`);

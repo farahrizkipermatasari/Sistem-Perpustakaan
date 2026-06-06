@@ -117,6 +117,13 @@ def init_database():
                     )
                            
             """)
+            cursor.execute("""
+                SELECT setval(
+                    pg_get_serial_sequence('loans', 'id'),
+                    COALESCE((SELECT MAX(id) FROM loans), 1),
+                    true
+                )
+            """)
         connection.commit()
         print("Tabel loan siap dipakai")
     
