@@ -10,9 +10,8 @@ const MONGO_URL =
   process.env.MONGO_URL ||
   "mongodb://book_user:book_password@book-db:27017/book_db?authSource=admin";
 
-// =========================
+
 // Schema Book
-// =========================
 const bookSchema = new mongoose.Schema(
   {
     title: {
@@ -44,9 +43,7 @@ const bookSchema = new mongoose.Schema(
 
 const Book = mongoose.model("Book", bookSchema);
 
-// =========================
 // MongoDB Connection
-// =========================
 async function connectWithRetry(retries = 20, delay = 3000) {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
@@ -64,9 +61,7 @@ async function connectWithRetry(retries = 20, delay = 3000) {
   throw new Error("Book Service gagal terhubung ke MongoDB");
 }
 
-// =========================
 // Seed Data Awal
-// =========================
 async function seedBooks() {
   const total = await Book.countDocuments();
 
@@ -92,9 +87,7 @@ async function seedBooks() {
   }
 }
 
-// =========================
 // Health Check
-// =========================
 app.get("/health", (req, res) => {
   res.json({
     service: "book-service",
@@ -104,9 +97,7 @@ app.get("/health", (req, res) => {
   });
 });
 
-// =========================
 // GET All Books
-// =========================
 app.get("/books", async (req, res) => {
   try {
     const books = await Book.find();
@@ -124,9 +115,7 @@ app.get("/books", async (req, res) => {
   }
 });
 
-// =========================
 // GET Book By ID
-// =========================
 app.get("/books/:id", async (req, res) => {
   try {
     const book = await Book.findById(req.params.id);
@@ -150,9 +139,7 @@ app.get("/books/:id", async (req, res) => {
   }
 });
 
-// =========================
 // CREATE Book
-// =========================
 app.post("/books", async (req, res) => {
   try {
     const { title, author, isbn, stock, category } = req.body;
@@ -178,9 +165,7 @@ app.post("/books", async (req, res) => {
   }
 });
 
-// =========================
 // UPDATE Book
-// =========================
 app.put("/books/:id", async (req, res) => {
   try {
     const book = await Book.findByIdAndUpdate(
@@ -208,9 +193,7 @@ app.put("/books/:id", async (req, res) => {
   }
 });
 
-// =========================
 // DELETE Book
-// =========================
 app.delete("/books/:id", async (req, res) => {
   try {
     const book = await Book.findByIdAndDelete(req.params.id);
@@ -233,9 +216,7 @@ app.delete("/books/:id", async (req, res) => {
   }
 });
 
-// =========================
 // Start Server
-// =========================
 async function startServer() {
   await connectWithRetry();
   await seedBooks();
